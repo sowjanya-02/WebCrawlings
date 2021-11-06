@@ -28,7 +28,7 @@ def retreive_covidurl(wet_url):
                 pass
     return total_links
 
-def total_archeivescovidurls(wet_urls):
+def total_archeivescovidurls(wet_urls,month):
     with gzip.open(wet_urls, 'rb') as f:
         file_content = f.readlines()
     covid_finalurls = []
@@ -36,6 +36,8 @@ def total_archeivescovidurls(wet_urls):
             s = line.decode('utf-8').strip()
             formatted_line = "http://commoncrawl.s3.amazonaws.com/{}".format(s)
             result = retreive_covidurl(formatted_line)
+            with open('data_{}.json'.format(month), 'a') as f:
+              json.dump(result, f)
             covid_finalurls += result
     return covid_finalurls
 
@@ -43,14 +45,13 @@ if __name__  == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--uri',
                        required=True)
-    parser.add_argument('--uri_out',
-                       required=True)
     parser.add_argument('--month_name',
                        required=True)
     args = parser.parse_args()
-    json_file = {'{} 2020'.format(args.month_name): total_archeivescovidurls(args.uri)}
-    with open(args.uri_out, 'w') as f:
-        json.dump(json_file, f)
+    total_archeivescovidurls(args.uri,args.month_name)
+    #json_file = {'{} 2020'.format(args.month_name): total_archeivescovidurls(args.uri)}
+    #with open(args.uri_out, 'w') as f:
+     #   json.dump(json_file, f)
 
 
 
