@@ -6,7 +6,7 @@ from warcio import ArchiveIterator
 import argparse
 import json
 
-def fun_format(wet_url):
+def retreive_covidurl(wet_url):
     regex_covid = re.compile("(covid|corona|pandemic|covid-19)")
     regex_economy = re.compile(
         "(economy|revenue|profit|profits|financial|wealth|shops|tax|money|salary|wage|crisis|jobs|housing|market|income|business|businesses|buy)")
@@ -17,10 +17,10 @@ def fun_format(wet_url):
     total_links = []
     for record in records:
         try:
-            title = record.content_stream().readline().lower().decode('utf-8')
+            title = str(record.content_stream().readline()).lower()
             m = regex_covid.search(title)
             if m:
-                    text = record.content_stream().read().lower().decode('utf-8')
+                    text = str(record.content_stream().read()).lower()
                     if regex_economy.search(text):
                         res = record.rec_headers.get_header('WARC-Target-URI')
                         total_links.append(res)
@@ -28,27 +28,28 @@ def fun_format(wet_url):
                 pass
     return total_links
 
-def final_list (wet_urls):
+def total_archeivescovidurls(wet_urls):
     with gzip.open(wet_urls, 'rb') as f:
         file_content = f.readlines()
     covid_finalurls = []
-    for reformatted_lines in file_content:
-            s = reformatted_lines.decode('utf-8').strip()
-            print (s)
-            s1 = "http://commoncrawl.s3.amazonaws.com/{}".format(s)
-            res1 = fun_format(s1)
-            covid_finalurls += res1
+    for line in file_content:
+            s = line.decode('utf-8').strip()
+            formatted_line = "http://commoncrawl.s3.amazonaws.com/{}".format(s)
+            result = retreive_covidurl(formatted_line)
+            covid_finalurls += result
     return covid_finalurls
 
 if __name__  == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--uri',
                        required=True)
+    parser.add_argument('--uri_out',
+                       required=True)
+    parser.add_argument('--month_name',
+                       required=True)
     args = parser.parse_args()
-    json_file = {'Jan 2020': final_list(args.uri)}
-    print (len(json_file['Jan 2020']))
-
-    with open('data_jan.json', 'w') as f:
+    json_file = {'{} 2020'.format(args.month_name): total_archeivescovidurls(args.uri)}
+    with open(args.uri_out, 'w') as f:
         json.dump(json_file, f)
 
 
